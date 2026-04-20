@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- ESTILOS PROFESIONALES LIMPIOS ---
+# --- ESTILOS LIMPIOS Y PROFESIONALES ---
 st.markdown("""
     <style>
     .main { background-color: #0E1117; }
@@ -15,31 +15,29 @@ st.markdown("""
         width: 100%;
         background: #007BFF;
         color: white;
-        border-radius: 5px;
-        padding: 12px;
+        border-radius: 4px;
+        padding: 10px;
         font-weight: bold;
         border: none;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background: #0056b3;
     }
     .report-card {
         background-color: #161B22;
-        padding: 30px;
-        border-radius: 10px;
+        padding: 25px;
+        border-radius: 8px;
         border: 1px solid #30363D;
-        line-height: 1.6;
-        color: #E6EDF3;
+        color: #FFFFFF;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGICA DE INTELIGENCIA (VERSION ANTI-404) ---
+# --- LOGICA DE INTELIGENCIA (FORZADO DE VERSION ESTABLE) ---
 def initialize_gemini(api_key):
     try:
+        # Configuracion de la llave
         genai.configure(api_key=api_key)
-        # Usamos la cadena simple del modelo, que es la mas estable en Streamlit Cloud
+        
+        # FORZADO: Especificamos el modelo exacto sin prefijos de ruta
+        # La libreria usara por defecto la version estable si no se indica lo contrario
         model = genai.GenerativeModel('gemini-1.5-flash')
         return model
     except Exception as e:
@@ -47,79 +45,80 @@ def initialize_gemini(api_key):
         return None
 
 def generate_global_plan(model, links, location, region_type):
+    # Prompt optimizado para analisis mundial
     prompt = f"""
-    Actua como una firma de consultoria estrategica.
-    Analiza los activos digitales: {links}
+    Actua como consultor estrategico senior.
+    Analiza los siguientes perfiles: {links}
     
-    CONTEXTO:
-    - Ubicacion: {location}
+    Contexto:
+    - Ciudad/Pais: {location}
     - Mercado: {region_type}
 
-    MISION: Generar un Roadmap Estrategico adaptado a esta zona.
-    
-    ESTRUCTURA DEL REPORTE:
-    1. ANALITICA DE MERCADO: Consumidor y competencia en {location}.
-    2. EMBUDO DE VENTAS: Adaptado a habitos locales.
-    3. DIRECCION DE ARTE: Estetica, paleta HEX y psicologia del color.
-    4. PLAN DE CONTENIDO: Calendario de 7 dias con guiones y horarios.
-    5. VIABILIDAD: Analisis de escalabilidad.
+    Genera un informe detallado con:
+    1. Analisis del mercado local en {location}.
+    2. Estrategia de ventas y conversion.
+    3. Guia de estilo visual y colores (Paleta HEX).
+    4. Plan de contenidos para 7 dias con horarios.
+    5. Analisis de escalabilidad.
 
-    Tono: Ejecutivo y profesional.
+    Tono: Profesional y ejecutivo.
     """
     try:
-        # Forzamos la generacion de contenido simple
+        # Generacion de contenido
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        # Mensaje de error detallado para diagnostico
-        return f"Error en la generacion: {str(e)}"
+        # Si vuelve a fallar, este mensaje nos dira exactamente que version esta usando
+        return f"Error tecnico: {str(e)}"
 
 # --- INTERFAZ ---
 def main():
     st.title("ORCA Strategic OS")
-    st.subheader("Consultoria Estrategica Automatizada")
+    st.text("Consultoria Estrategica Global")
 
     with st.sidebar:
-        st.header("Configuracion")
+        st.header("Ajustes")
         
-        # Prioridad a Secrets de Streamlit
-        if "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
+        # Validacion de llave desde Secrets
+        api_key = st.secrets.get("GEMINI_API_KEY")
+        
+        if api_key:
             st.success("Sistema Conectado")
         else:
-            api_key = st.text_input("API Key", type="password")
+            api_key = st.text_input("Ingresa tu API Key", type="password")
             
         st.divider()
         
-        location = st.text_input("Ciudad o Pais", placeholder="Ej: Ecuador")
-        region_type = st.selectbox("Tipo de Mercado", [
+        location = st.text_input("Ubicacion", placeholder="Ej: Ecuador")
+        region_type = st.selectbox("Segmento de Mercado", [
             "Mercado Emergente", 
             "Mercado Maduro", 
             "Mercado de Lujo",
             "Global"
         ])
 
-    st.markdown("### Enlaces de Referencia")
-    links_input = st.text_area("Pega los links (Instagram, TikTok, Web):", height=150)
+    st.markdown("### Activos a Analizar")
+    links_input = st.text_area("Pega los enlaces aqui:", height=100)
 
-    if st.button("GENERAR CONSULTORIA ESTRATEGICA"):
+    if st.button("GENERAR ESTRATEGIA"):
         if not api_key:
-            st.error("Falta la API Key en la configuracion.")
+            st.error("Error: No se encontro la GEMINI_API_KEY en los Secrets.")
         elif not links_input or not location:
-            st.warning("Por favor rellena la ubicacion y los enlaces.")
+            st.warning("Por favor ingresa la ubicacion y los enlaces.")
         else:
-            with st.spinner("Analizando datos y generando estrategia..."):
+            with st.spinner("Procesando consultoria mundial..."):
                 model = initialize_gemini(api_key)
                 if model:
                     report = generate_global_plan(model, links_input, location, region_type)
                     
-                    if "Error" in report:
-                        st.error(report)
+                    if "404" in report or "Error" in report:
+                        st.error("Error de conexion con el servidor de Google.")
+                        st.write(report)
                     else:
                         st.divider()
-                        st.markdown(f"## Analisis Estrategico: {location}")
+                        st.markdown(f"## Resultados: {location}")
                         st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
-                        st.download_button("Descargar Reporte", report, file_name=f"Estrategia_{location}.md")
+                        st.download_button("Descargar Informe", report, file_name=f"Estrategia_{location}.md")
 
 if __name__ == "__main__":
     main()
