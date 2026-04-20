@@ -30,45 +30,49 @@ st.markdown("""
         border-radius: 10px;
         border: 1px solid #30363D;
         line-height: 1.6;
+        color: #E6EDF3;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGICA DE INTELIGENCIA ---
+# --- LOGICA DE INTELIGENCIA (VERSION ANTI-404) ---
 def initialize_gemini(api_key):
     try:
         genai.configure(api_key=api_key)
-        # Se utiliza la ruta completa del modelo para máxima compatibilidad
-        return genai.GenerativeModel(model_name='models/gemini-1.5-flash')
+        # Usamos la cadena simple del modelo, que es la mas estable en Streamlit Cloud
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        return model
     except Exception as e:
-        st.error(f"Error de conexion: {e}")
+        st.error(f"Error de configuracion: {e}")
         return None
 
 def generate_global_plan(model, links, location, region_type):
     prompt = f"""
-    Actua como una firma de consultoria estrategica de alto nivel.
-    Analiza los siguientes activos digitales: {links}
+    Actua como una firma de consultoria estrategica.
+    Analiza los activos digitales: {links}
     
-    CONTEXTO GEOGRAFICO:
+    CONTEXTO:
     - Ubicacion: {location}
-    - Tipo de Mercado: {region_type}
+    - Mercado: {region_type}
 
-    MISION: Generar un Strategic Roadmap 360 adaptado cultural y economicamente a esta zona.
+    MISION: Generar un Roadmap Estrategico adaptado a esta zona.
     
     ESTRUCTURA DEL REPORTE:
-    1. ANALITICA DE MERCADO: Comportamiento del consumidor y competencia en {location}.
-    2. EMBUDO DE VENTAS (AIDA): Adaptado a la moneda y habitos de compra locales.
-    3. DIRECCION DE ARTE: Estetica visual (Luxury Editorial), paleta HEX y psicologia del color.
-    4. PLAN DE CONTENIDO: Calendario de 7 dias con Hooks, guiones y mejores horas de publicacion.
-    5. VIABILIDAD Y ROI: Analisis de escalabilidad.
+    1. ANALITICA DE MERCADO: Consumidor y competencia en {location}.
+    2. EMBUDO DE VENTAS: Adaptado a habitos locales.
+    3. DIRECCION DE ARTE: Estetica, paleta HEX y psicologia del color.
+    4. PLAN DE CONTENIDO: Calendario de 7 dias con guiones y horarios.
+    5. VIABILIDAD: Analisis de escalabilidad.
 
-    Tono: Ejecutivo, directo y altamente profesional.
+    Tono: Ejecutivo y profesional.
     """
     try:
+        # Forzamos la generacion de contenido simple
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Error en el motor estrategico: {str(e)}"
+        # Mensaje de error detallado para diagnostico
+        return f"Error en la generacion: {str(e)}"
 
 # --- INTERFAZ ---
 def main():
@@ -78,7 +82,7 @@ def main():
     with st.sidebar:
         st.header("Configuracion")
         
-        # Uso de Secrets para la API Key
+        # Prioridad a Secrets de Streamlit
         if "GEMINI_API_KEY" in st.secrets:
             api_key = st.secrets["GEMINI_API_KEY"]
             st.success("Sistema Conectado")
@@ -87,7 +91,7 @@ def main():
             
         st.divider()
         
-        location = st.text_input("Ciudad o Pais", placeholder="Ej: Madrid, España")
+        location = st.text_input("Ciudad o Pais", placeholder="Ej: Ecuador")
         region_type = st.selectbox("Tipo de Mercado", [
             "Mercado Emergente", 
             "Mercado Maduro", 
@@ -96,21 +100,26 @@ def main():
         ])
 
     st.markdown("### Enlaces de Referencia")
-    links_input = st.text_area("Ingresa los links de redes sociales o web:", height=150)
+    links_input = st.text_area("Pega los links (Instagram, TikTok, Web):", height=150)
 
     if st.button("GENERAR CONSULTORIA ESTRATEGICA"):
-        if api_key and links_input and location:
-            with st.spinner(f"Procesando analisis para {location}..."):
+        if not api_key:
+            st.error("Falta la API Key en la configuracion.")
+        elif not links_input or not location:
+            st.warning("Por favor rellena la ubicacion y los enlaces.")
+        else:
+            with st.spinner("Analizando datos y generando estrategia..."):
                 model = initialize_gemini(api_key)
                 if model:
                     report = generate_global_plan(model, links_input, location, region_type)
-                    st.divider()
-                    st.markdown(f"## Estrategia: {location}")
-                    st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
                     
-                    st.download_button("Exportar Reporte", report, file_name=f"Estrategia_{location}.md")
-        else:
-            st.warning("Asegurate de haber configurado la ubicacion y los enlaces correctamente.")
+                    if "Error" in report:
+                        st.error(report)
+                    else:
+                        st.divider()
+                        st.markdown(f"## Analisis Estrategico: {location}")
+                        st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
+                        st.download_button("Descargar Reporte", report, file_name=f"Estrategia_{location}.md")
 
 if __name__ == "__main__":
     main()
