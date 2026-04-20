@@ -14,6 +14,15 @@ st.set_page_config(
 )
 
 # ==============================
+# CARGA SEGURA DE API KEY
+# ==============================
+
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    GEMINI_API_KEY = None
+
+# ==============================
 # DARK THEME
 # ==============================
 
@@ -45,11 +54,11 @@ st.markdown("""
 # GEMINI API
 # ==============================
 
-def call_gemini(api_key, prompt):
-    if not api_key:
-        return "Error: API Key no proporcionada."
+def call_gemini(prompt):
+    if not GEMINI_API_KEY:
+        return "Error: API Key no configurada en secrets."
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     headers = {
         "Content-Type": "application/json"
@@ -68,6 +77,7 @@ def call_gemini(api_key, prompt):
             return f"Error API ({response.status_code}): {response.text}"
 
         result = response.json()
+
         return result["candidates"][0]["content"]["parts"][0]["text"]
 
     except requests.exceptions.Timeout:
@@ -132,12 +142,14 @@ Tipografías
 4. CONTENIDO
 Calendario de 7 días
 Hooks virales
-Guiones técnicos
+Guiones técnicos (tomas, iluminación, encuadre)
 
 5. ADMINISTRACIÓN
 Viabilidad del negocio
 Optimización operativa
 Cuellos de botella
+
+Respuesta extremadamente específica, accionable y profesional.
 """
 
 # ==============================
@@ -147,20 +159,16 @@ Cuellos de botella
 st.title("ORCA Strategic OS")
 st.subheader("Sistema de inteligencia estratégica automatizada")
 
-# API key precargada en el campo (puedes cambiarla manualmente si quieres)
-api_key_input = st.text_input(
-    "API Key de Gemini",
-    value="gen-lang-client-0393749840",
-    type="password"
-)
+if not GEMINI_API_KEY:
+    st.warning("No se encontró la API Key en secrets. Configúrala antes de usar la app.")
 
 urls_input = st.text_area("URLs (una por línea)")
 location = st.text_input("Ubicación objetivo", "Quito, Ecuador")
 
 if st.button("Ejecutar análisis"):
 
-    if not api_key_input:
-        st.error("Debes ingresar tu API Key.")
+    if not GEMINI_API_KEY:
+        st.error("API Key no configurada.")
     elif not urls_input.strip():
         st.error("Debes ingresar al menos una URL.")
     else:
@@ -181,7 +189,7 @@ if st.button("Ejecutar análisis"):
         st.info("Procesando análisis estratégico...")
 
         with st.spinner("Generando resultado..."):
-            output = call_gemini(api_key_input, prompt)
+            output = call_gemini(prompt)
 
         st.success("Análisis completado.")
 
