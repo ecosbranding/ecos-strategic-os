@@ -139,7 +139,7 @@ def main():
     # ACCIÓN PRINCIPAL
     if st.button("GENERAR HOJA DE RUTA 360°"):
         if not api_key:
-            st.error("Por favor, ingresa tu API Key de Gemini.")
+            st.error("GEMINI_API_KEY = "AIzaSyBvG3EIcwLXZE9LxFFJ9lOPplk7FCoIeDs"")
         elif not links_input or not location:
             st.error("Faltan datos requeridos (Links o Ubicación).")
         else:
