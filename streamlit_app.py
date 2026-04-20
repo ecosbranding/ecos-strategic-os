@@ -1,73 +1,31 @@
 import streamlit as st
 import requests
-from urllib.parse import urlparse
-import json
-import random
 
-# ==============================
-# CONFIGURACIÓN GENERAL
-# ==============================
-
-st.set_page_config(
-    page_title="ORCA Strategic OS",
-    layout="wide"
-)
-
-# ==============================
-# CARGA SEGURA DE API KEY
-# ==============================
-
+# Cargar key desde secrets
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 except Exception:
     GEMINI_API_KEY = None
 
-# ==============================
-# DARK THEME
-# ==============================
-
-st.markdown("""
-<style>
-    body {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    .stTextArea textarea {
-        background-color: #1c1f26;
-        color: #ffffff;
-    }
-    .stTextInput input {
-        background-color: #1c1f26;
-        color: #ffffff;
-    }
-    .stButton>button {
-        background: linear-gradient(90deg, #00c6ff, #0072ff);
-        color: white;
-        border-radius: 6px;
-        border: none;
-        font-weight: 600;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ==============================
-# GEMINI API
-# ==============================
-
 def call_gemini(prompt):
     if not GEMINI_API_KEY:
         return "Error: API Key no configurada en secrets."
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY
     }
 
     data = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }]
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
     }
 
     try:
@@ -78,6 +36,10 @@ def call_gemini(prompt):
 
         result = response.json()
 
+        # Validación defensiva
+        if "candidates" not in result:
+            return f"Respuesta inesperada: {result}"
+
         return result["candidates"][0]["content"]["parts"][0]["text"]
 
     except requests.exceptions.Timeout:
@@ -86,115 +48,3 @@ def call_gemini(prompt):
         return f"Error de conexión: {str(e)}"
     except Exception as e:
         return f"Error inesperado: {str(e)}"
-
-# ==============================
-# SCRAPING SIMULADO
-# ==============================
-
-def simulate_scraping(url):
-    try:
-        domain = urlparse(url).netloc
-
-        return {
-            "url": url,
-            "platform": "Instagram" if "instagram" in domain else "TikTok" if "tiktok" in domain else "Web",
-            "followers": random.randint(1000, 100000),
-            "engagement_rate": round(random.uniform(1.0, 10.0), 2),
-            "content_type": random.choice(["Reels", "Educativo", "Lifestyle", "Ventas"]),
-            "posting_frequency": random.choice(["Alta", "Media", "Baja"]),
-            "brand_tone": random.choice(["Premium", "Casual", "Corporativo"])
-        }
-
-    except Exception as e:
-        return {"url": url, "error": str(e)}
-
-# ==============================
-# PROMPT ESTRATÉGICO
-# ==============================
-
-def build_prompt(data, location):
-    return f"""
-Eres un equipo élite de Silicon Valley compuesto por:
-Senior Full-Stack Developer, CMO, Director de Arte Editorial, Data Analyst y MBA.
-
-Analiza estos datos:
-
-{json.dumps(data, indent=2)}
-
-Ubicación objetivo: {location}
-
-Entrega:
-
-1. ESTADÍSTICAS
-Diagnóstico de engagement
-Salud de marca
-Benchmark implícito
-
-2. MARKETING Y VENTAS
-Funnel AIDA completo
-Estrategia de pauta local
-
-3. DISEÑO GRÁFICO
-Estética Luxury Editorial
-Paleta de colores HEX
-Tipografías
-
-4. CONTENIDO
-Calendario de 7 días
-Hooks virales
-Guiones técnicos (tomas, iluminación, encuadre)
-
-5. ADMINISTRACIÓN
-Viabilidad del negocio
-Optimización operativa
-Cuellos de botella
-
-Respuesta extremadamente específica, accionable y profesional.
-"""
-
-# ==============================
-# UI
-# ==============================
-
-st.title("ORCA Strategic OS")
-st.subheader("Sistema de inteligencia estratégica automatizada")
-
-if not GEMINI_API_KEY:
-    st.warning("No se encontró la API Key en secrets. Configúrala antes de usar la app.")
-
-urls_input = st.text_area("URLs (una por línea)")
-location = st.text_input("Ubicación objetivo", "Quito, Ecuador")
-
-if st.button("Ejecutar análisis"):
-
-    if not GEMINI_API_KEY:
-        st.error("API Key no configurada.")
-    elif not urls_input.strip():
-        st.error("Debes ingresar al menos una URL.")
-    else:
-        urls = urls_input.split("\n")
-
-        st.info("Ejecutando scraping...")
-
-        results = []
-        for url in urls:
-            url = url.strip()
-            if url:
-                results.append(simulate_scraping(url))
-
-        st.success("Scraping completado.")
-
-        prompt = build_prompt(results, location)
-
-        st.info("Procesando análisis estratégico...")
-
-        with st.spinner("Generando resultado..."):
-            output = call_gemini(prompt)
-
-        st.success("Análisis completado.")
-
-        st.markdown("## Resultado estratégico")
-        st.markdown(output)
-
-        with st.expander("Datos procesados"):
-            st.json(results)
