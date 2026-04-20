@@ -4,7 +4,7 @@ import re
 import json
 from datetime import datetime
 
-# --- CONFIGURACIÓN DE PÁGINA (UI/UX) ---
+# --- CONFIGURACIÓN DE PÁGINA (ESTÁNDAR SILICON VALLEY) ---
 st.set_page_config(
     page_title="ORCA Strategic OS",
     page_icon="🐋",
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CUSTOM (DARK THEME & EDITORIAL DESIGN) ---
+# --- ESTILOS CUSTOM (DARK THEME & LUXURY EDITORIAL) ---
 st.markdown("""
     <style>
     .main { background-color: #0E1117; color: #FFFFFF; }
@@ -20,147 +20,142 @@ st.markdown("""
         width: 100%;
         background-color: #007BFF;
         color: white;
-        border-radius: 5px;
+        border-radius: 8px;
         border: none;
-        padding: 10px;
+        padding: 12px;
         font-weight: bold;
+        transition: 0.3s;
     }
-    .stTextInput>div>div>input { background-color: #1A1C24; color: white; border: 1px solid #30363D; }
+    .stButton>button:hover { background-color: #0056b3; border: 1px solid #007BFF; }
     .report-card {
         background-color: #161B22;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #007BFF;
-        margin-bottom: 20px;
+        padding: 25px;
+        border-radius: 12px;
+        border-left: 6px solid #007BFF;
+        margin-bottom: 25px;
+        line-height: 1.6;
     }
-    h1, h2, h3 { font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
+    .success-text { color: #28a745; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LÓGICA DE BACKEND: CONECTIVIDAD & IA ---
+# --- MOTOR DE INTELIGENCIA ARTIFICIAL ---
 def initialize_gemini(api_key):
     try:
         genai.configure(api_key=api_key)
         return genai.GenerativeModel('gemini-pro')
     except Exception as e:
-        st.error(f"Error al conectar con la API de Google: {e}")
+        st.error(f"Error de conexión: {e}")
         return None
 
 def simulate_scraping(links):
-    """
-    Simula la extracción de metadatos y análisis de salud de marca
-    basado en los patrones de las URLs proporcionadas.
-    """
+    """Simula la extracción de metadatos de los links ingresados."""
     extracted_data = []
     for link in links:
-        if not link.strip():
-            continue
-        platform = "Web"
+        link = link.strip()
+        if not link: continue
+        platform = "Web/General"
         if "instagram.com" in link: platform = "Instagram"
         elif "tiktok.com" in link: platform = "TikTok"
+        elif "facebook.com" in link: platform = "Facebook"
         
-        # Simulación de extracción de métricas mediante análisis de patrón
         extracted_data.append({
             "url": link,
             "platform": platform,
-            "status": "Verified",
-            "detected_tone": "Editorial/Professional"
+            "status": "Análisis Listo"
         })
     return extracted_data
 
-# --- MÓDULO DE LÓGICA DE NEGOCIOS (SYSTEM PROMPT) ---
+# --- LÓGICA DE NEGOCIOS (PROMPT ESTRATÉGICO) ---
 def generate_strategic_plan(model, data, location):
     links_context = "\n".join([f"- {item['platform']}: {item['url']}" for item in data])
     
     prompt = f"""
-    Eres un equipo Élite de Consultoría en Silicon Valley (CMO, Director de Arte, MBA).
-    Analiza los siguientes activos digitales para una marca en {location}:
-    CONTEXTO DE MARCA:
+    Actúa como un Equipo de Élite (CMO, Analista de Datos, Director de Arte y MBA).
+    Genera una consultoría completa para una marca con presencia en: {location}.
+    
+    ACTIVOS DIGITALES DETECTADOS:
     {links_context}
 
-    TU MISIÓN: Generar una Hoja de Ruta 360° en formato Markdown profesional.
+    REQUERIMIENTOS TÉCNICOS DEL REPORTE:
+    1. ESTRATEGIA 360°: Análisis de engagement y salud de marca.
+    2. MARKETING & VENTAS: Embudo AIDA y plan de pauta local en {location}.
+    3. DISEÑO EDITORIAL: Estética 'Luxury Editorial', paleta de colores HEX y tipografía.
+    4. CONTENIDO: Calendario de 7 días con guiones (hooks, tomas, iluminación).
+    5. ADMINISTRACIÓN: Análisis de viabilidad operativa y ROI proyectado.
 
-    ESTRUCTURA OBLIGATORIA:
-    1. ANÁLISIS DE SALUD DIGITAL (Métricas Estimadas): Engagement rate, coherencia visual y posicionamiento.
-    2. ESTRATEGIA DE MARKETING & VENTAS: 
-       - Funnel AIDA específico para el mercado de {location}.
-       - Estrategia de pauta local (Facebook/IG Ads + Google Maps).
-    3. DIRECTORIO DE ARTE (Luxury Editorial):
-       - Definición estética (Minimalismo, High-Contrast, etc.).
-       - Paleta de colores (Códigos Hex).
-       - Tipografías sugeridas (Serif vs Sans).
-    4. CALENDARIO EDITORIAL (7 DÍAS): 
-       - Incluye para cada día: Título, Hook, Guión técnico (toma, iluminación, ángulo) y audio tendencia.
-    5. VIABILIDAD FINANCIERA (MBA): 
-       - Análisis de ROI proyectado y optimización operativa.
-
-    Tono: Ejecutivo, sofisticado, directo y altamente técnico.
+    Tono: Profesional, sofisticado y ejecutable. No resumas.
     """
     
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return f"Error en el procesamiento estratégico: {str(e)}"
+        return f"Error en el motor estratégico: {str(e)}"
 
-# --- INTERFAZ DE USUARIO (UI) ---
+# --- INTERFAZ DE USUARIO ---
 def main():
     st.title("🐋 ORCA Strategic OS")
-    st.subheader("Automated Consulting Suite | V 1.0")
+    st.subheader("Automated Consulting & Intelligence Suite")
     
+    # CONTROL DE MANDO (SIDEBAR)
     with st.sidebar:
-        st.header("Control de Mando")
-        api_key = st.text_input("Gemini API Key", type="password", help="Ingresa tu Google AI Studio API Key")
-        location = st.text_input("Ubicación Geográfica", placeholder="Ej. Quito, Ecuador")
+        st.header("⚙️ Configuración")
+        
+        # INTEGRACIÓN CON SECRETS
+        if "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+            st.markdown('<p class="success-text">✅ Sistema de IA Conectado</p>', unsafe_allow_html=True)
+        else:
+            api_key = st.text_input("Ingresa Gemini API Key", type="password")
+            st.warning("⚠️ Clave no detectada en Secrets. Ingresa una manualmente.")
+            
         st.divider()
-        st.info("Esta PWA utiliza IA de Google para análisis de mercado en tiempo real.")
+        location = st.text_input("📍 Ubicación del Mercado", placeholder="Ej: Quito, Ecuador")
+        st.info("Configurado para el mercado local de " + (location if location else "la región"))
 
-    # MÓDULO DE ENTRADA
-    col1, col2 = st.columns([1, 1])
+    # ÁREA DE TRABAJO
+    col_input, col_status = st.columns([1.2, 0.8])
     
-    with col1:
-        st.markdown("### 🔗 Activos Digitales")
-        links_input = st.text_area(
-            "Ingresa los enlaces (uno por línea)",
-            placeholder="https://instagram.com/marca\nhttps://tiktok.com/@marca",
-            height=150
+    with col_input:
+        st.markdown("### 🔗 Enlaces de Referencia")
+        links_text = st.text_area(
+            "Pega URLs de IG, TikTok o Web (una por línea):",
+            placeholder="https://www.instagram.com/orcastudios...",
+            height=180
         )
     
-    with col2:
-        st.markdown("### 📊 Estado del Sistema")
-        if links_input and location:
-            links_list = links_input.split('\n')
-            scraping_results = simulate_scraping(links_list)
-            for res in scraping_results:
-                st.write(f"✅ **{res['platform']}**: Detectado correctamente.")
+    with col_status:
+        st.markdown("### 📡 Scanner de Metadatos")
+        if links_text:
+            links_list = links_text.split('\n')
+            results = simulate_scraping(links_list)
+            for r in results:
+                st.write(f"🔹 **{r['platform']}**: {r['status']}")
         else:
-            st.warning("Esperando datos de entrada...")
+            st.write("Esperando activos digitales...")
 
-    # ACCIÓN PRINCIPAL
-    if st.button("GENERAR HOJA DE RUTA 360°"):
+    # ACCIÓN ESTRATÉGICA
+    if st.button("DESPLEGAR CONSULTORÍA 360°"):
         if not api_key:
-            st.error("GEMINI_API_KEY = "AIzaSyBvG3EIcwLXZE9LxFFJ9lOPplk7FCoIeDs"")
-        elif not links_input or not location:
-            st.error("Faltan datos requeridos (Links o Ubicación).")
+            st.error("Error: Se requiere una API Key válida para procesar.")
+        elif not links_text or not location:
+            st.error("Error: Debes ingresar links y una ubicación geográfica.")
         else:
-            with st.spinner("ORCA AI está procesando la estrategia..."):
+            with st.spinner("El equipo de Silicon Valley está analizando tu marca..."):
                 model = initialize_gemini(api_key)
                 if model:
-                    # Simulación de Scraping para el contexto
-                    scraped_data = simulate_scraping(links_input.split('\n'))
-                    
-                    # Generación de Estrategia
+                    scraped_data = simulate_scraping(links_text.split('\n'))
                     report = generate_strategic_plan(model, scraped_data, location)
                     
                     st.divider()
-                    st.markdown("## 🏁 RESULTADO ESTRATÉGICO")
+                    st.markdown("## 📊 HOJA DE RUTA ESTRATÉGICA")
                     st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
                     
-                    # Opción de Descarga
                     st.download_button(
-                        label="Descargar Informe Estratégico",
+                        label="📄 Exportar Estrategia (PDF/MD)",
                         data=report,
-                        file_name=f"ORCA_Strategy_{location}.md",
+                        file_name=f"ORCA_Estrategia_{location}.md",
                         mime="text/markdown"
                     )
 
