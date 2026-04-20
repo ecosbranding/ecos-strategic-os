@@ -43,7 +43,7 @@ st.markdown("""
 def initialize_gemini(api_key):
     try:
         genai.configure(api_key=api_key)
-        return genai.GenerativeModel('gemini-pro')
+        genai.GenerativeModel('gemini-1.5-flash')
     except Exception as e:
         st.error(f"Error de conexión: {e}")
         return None
