@@ -2,10 +2,10 @@ import streamlit as st
 import requests
 import json
 
-# Configuración básica de la página
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="ORCA Strategic OS", layout="wide")
 
-# Estilos ejecutivos sin iconos
+# --- ESTILOS PROFESIONALES (SIN ICONOS) ---
 st.markdown("""
     <style>
     .main { background-color: #0E1117; }
@@ -15,57 +15,78 @@ st.markdown("""
     }
     .report-card {
         background-color: #161B22; padding: 25px; border-radius: 8px;
-        border: 1px solid #30363D; color: #E6EDF3;
+        border: 1px solid #30363D; color: #E6EDF3; line-height: 1.6;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Motor de conexión ultra-directa
-def call_ia(prompt):
-    # API KEY integrada
-    key = "AIzaSyBvG3EIcwLXZE9LxFFJ9lOPplk7FCoIeDs"
+# --- MOTOR DE INTELIGENCIA (OPENAI) ---
+def call_openai_ia(prompt):
+    # Tu clave de OpenAI integrada
+    api_key = "Sk-proj-ie8te5OSr0dburrHjf8fHMu16ZwFKiiPjzleUwY9dqolEZIx8Jtry6nhfuySvbAhhttNk2PmT3T3BlbkFJNEBynFQltB68Y4P5_r2Hyh86OYmRkfw83Kaid97nGj3MO1BliHDH6omrf-wSJOEgv_or7couYA"
+    url = "https://api.openai.com/v1/chat/completions"
     
-    # URL forzada a v1 (la versión más estable de Google)
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={key}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
     
-    headers = {'Content-Type': 'application/json'}
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
+    data = {
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "system", "content": "Eres un consultor de marketing y branding senior para ORCA Studios."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
     }
 
     try:
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-        data = response.json()
+        response = requests.post(url, headers=headers, json=data)
+        result = response.json()
         
         if response.status_code == 200:
-            return data['candidates'][0]['content']['parts'][0]['text']
+            return result['choices'][0]['message']['content']
         else:
-            return f"Error {response.status_code}: {data.get('error', {}).get('message', 'Fallo de servidor')}"
+            error_msg = result.get('error', {}).get('message', 'Fallo de autenticacion o saldo')
+            return f"Error de OpenAI ({response.status_code}): {error_msg}"
     except Exception as e:
-        return f"Error critico: {str(e)}"
+        return f"Error critico de conexion: {str(e)}"
 
-# Interfaz limpia
+# --- INTERFAZ DE USUARIO ---
 st.title("ORCA Strategic OS")
 st.text("Plataforma de Consultoria Estrategica")
 
 with st.sidebar:
-    st.header("Parametros")
-    ubicacion = st.text_input("Ubicacion", value="Ecuador")
-    st.info("Sistema conectado a Google AI v1")
+    st.header("Configuracion")
+    ubicacion = st.text_input("Ubicacion del Mercado", value="Ecuador")
+    st.success("Conectado via OpenAI (GPT-4o)")
 
-st.markdown("### Analisis de Activos")
-enlaces = st.text_area("Pega los links aqui:", height=150)
+st.markdown("### Analisis de Activos Digitales")
+enlaces = st.text_area("Pega los enlaces (Instagram, TikTok, Web):", height=150)
 
 if st.button("EJECUTAR ESTRATEGIA"):
     if not enlaces:
-        st.warning("Ingresa los enlaces para analizar.")
+        st.warning("Por favor, ingresa los enlaces para comenzar el analisis.")
     else:
-        with st.spinner("Procesando..."):
-            instruccion = f"Analiza estos perfiles: {enlaces}. Contexto: {ubicacion}. Genera estrategia de marketing, paleta de colores y plan de 7 dias."
-            resultado = call_ia(instruccion)
+        with st.spinner("Analizando perfiles y generando estrategia..."):
+            instruccion = f"""
+            Analiza los siguientes perfiles: {enlaces}
+            Mercado objetivo: {ubicacion}
             
-            if "Error" in resultado:
-                st.error(resultado)
+            Genera un reporte ejecutivo detallado con:
+            1. Analisis de la audiencia local en {ubicacion}.
+            2. Estrategia de contenidos y pilares de marca.
+            3. Sugerencia visual y paleta de colores (Codigos HEX).
+            4. Plan de contenidos de 7 dias (Temas y formatos).
+            5. Recomendaciones de escalabilidad.
+            """
+            
+            reporte = call_openai_ia(instruccion)
+            
+            if "Error" in reporte:
+                st.error(reporte)
             else:
                 st.divider()
-                st.markdown(f'<div class="report-card">{resultado}</div>', unsafe_allow_html=True)
+                st.markdown(f"## Estrategia para {ubicacion}")
+                st.markdown(f'<div class="report-card">{reporte}</div>', unsafe_allow_html=True)
+                st.download_button("Descargar Reporte", reporte, file_name=f"Estrategia_ORCA_{ubicacion}.md")
