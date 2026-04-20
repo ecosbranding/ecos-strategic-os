@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
+import json
 
 # --- CONFIGURACION DE PAGINA ---
 st.set_page_config(
@@ -7,7 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- ESTILOS LIMPIOS Y PROFESIONALES ---
+# --- ESTILOS LIMPIOS ---
 st.markdown("""
     <style>
     .main { background-color: #0E1117; }
@@ -16,7 +17,7 @@ st.markdown("""
         background: #007BFF;
         color: white;
         border-radius: 4px;
-        padding: 10px;
+        padding: 12px;
         font-weight: bold;
         border: none;
     }
@@ -25,100 +26,86 @@ st.markdown("""
         padding: 25px;
         border-radius: 8px;
         border: 1px solid #30363D;
-        color: #FFFFFF;
+        color: #E6EDF3;
+        line-height: 1.6;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGICA DE INTELIGENCIA (FORZADO DE VERSION ESTABLE) ---
-def initialize_gemini(api_key):
-    try:
-        # Configuracion de la llave
-        genai.configure(api_key=api_key)
-        
-        # FORZADO: Especificamos el modelo exacto sin prefijos de ruta
-        # La libreria usara por defecto la version estable si no se indica lo contrario
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        return model
-    except Exception as e:
-        st.error(f"Error de configuracion: {e}")
-        return None
-
-def generate_global_plan(model, links, location, region_type):
-    # Prompt optimizado para analisis mundial
-    prompt = f"""
-    Actua como consultor estrategico senior.
-    Analiza los siguientes perfiles: {links}
+# --- MOTOR DE INTELIGENCIA (CONEXION DIRECTA API V1) ---
+def call_gemini_api(api_key, prompt):
+    # Forzamos la version 1 estable directamente en la URL
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    Contexto:
-    - Ciudad/Pais: {location}
-    - Mercado: {region_type}
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
 
-    Genera un informe detallado con:
-    1. Analisis del mercado local en {location}.
-    2. Estrategia de ventas y conversion.
-    3. Guia de estilo visual y colores (Paleta HEX).
-    4. Plan de contenidos para 7 dias con horarios.
-    5. Analisis de escalabilidad.
-
-    Tono: Profesional y ejecutivo.
-    """
     try:
-        # Generacion de contenido
-        response = model.generate_content(prompt)
-        return response.text
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+        result = response.json()
+        
+        if response.status_code == 200:
+            return result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            return f"Error de servidor ({response.status_code}): {result.get('error', {}).get('message', 'Error desconocido')}"
     except Exception as e:
-        # Si vuelve a fallar, este mensaje nos dira exactamente que version esta usando
-        return f"Error tecnico: {str(e)}"
+        return f"Error de conexion: {str(e)}"
 
 # --- INTERFAZ ---
 def main():
     st.title("ORCA Strategic OS")
-    st.text("Consultoria Estrategica Global")
+    st.text("Plataforma de Consultoria Estrategica")
 
     with st.sidebar:
-        st.header("Ajustes")
+        st.header("Configuracion")
         
-        # Validacion de llave desde Secrets
+        # Obtener API KEY de Secrets
         api_key = st.secrets.get("GEMINI_API_KEY")
         
         if api_key:
-            st.success("Sistema Conectado")
+            st.success("Conexion Segura")
         else:
-            api_key = st.text_input("Ingresa tu API Key", type="password")
+            api_key = st.text_input("Ingresa API Key manualmente", type="password")
             
         st.divider()
-        
-        location = st.text_input("Ubicacion", placeholder="Ej: Ecuador")
-        region_type = st.selectbox("Segmento de Mercado", [
-            "Mercado Emergente", 
-            "Mercado Maduro", 
-            "Mercado de Lujo",
-            "Global"
-        ])
+        location = st.text_input("Ubicacion del Mercado", placeholder="Ej: Ecuador")
+        market_type = st.selectbox("Tipo de Mercado", ["Emergente", "Maduro", "Lujo", "Global"])
 
-    st.markdown("### Activos a Analizar")
-    links_input = st.text_area("Pega los enlaces aqui:", height=100)
+    st.markdown("### Enlaces para Analisis")
+    links = st.text_area("Pega los links (IG, TikTok, Web):", height=120)
 
-    if st.button("GENERAR ESTRATEGIA"):
+    if st.button("EJECUTAR ESTRATEGIA"):
         if not api_key:
-            st.error("Error: No se encontro la GEMINI_API_KEY en los Secrets.")
-        elif not links_input or not location:
-            st.warning("Por favor ingresa la ubicacion y los enlaces.")
+            st.error("Falta la GEMINI_API_KEY en los ajustes.")
+        elif not links or not location:
+            st.warning("Completa la ubicacion y los enlaces.")
         else:
-            with st.spinner("Procesando consultoria mundial..."):
-                model = initialize_gemini(api_key)
-                if model:
-                    report = generate_global_plan(model, links_input, location, region_type)
-                    
-                    if "404" in report or "Error" in report:
-                        st.error("Error de conexion con el servidor de Google.")
-                        st.write(report)
-                    else:
-                        st.divider()
-                        st.markdown(f"## Resultados: {location}")
-                        st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
-                        st.download_button("Descargar Informe", report, file_name=f"Estrategia_{location}.md")
+            with st.spinner(f"Analizando mercado en {location}..."):
+                # Construccion del Prompt
+                full_prompt = f"""
+                Actua como consultor senior de marketing. Analiza: {links}
+                Zona: {location}. Mercado: {market_type}.
+                Genera:
+                1. Analisis de audiencia local.
+                2. Estrategia de conversion.
+                3. Guia visual (HEX).
+                4. Plan de contenido 7 dias.
+                Tono profesional.
+                """
+                
+                report = call_gemini_api(api_key, full_prompt)
+                
+                if "Error" in report:
+                    st.error(report)
+                else:
+                    st.divider()
+                    st.markdown(f"## Estrategia para {location}")
+                    st.markdown(f'<div class="report-card">{report}</div>', unsafe_allow_html=True)
+                    st.download_button("Descargar Estrategia", report, file_name=f"ORCA_{location}.txt")
 
 if __name__ == "__main__":
     main()
